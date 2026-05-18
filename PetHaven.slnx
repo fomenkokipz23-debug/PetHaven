@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/PetHaven.Application/PetHaven.Application.csproj" />
+    <Project Path="src/PetHaven.Console/PetHaven.Console.csproj" />
+    <Project Path="src/PetHaven.Domain/PetHaven.Domain.csproj" />
+    <Project Path="src/PetHaven.Infrastructure/PetHaven.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/PetHaven.Tests/PetHaven.Tests.csproj" />
+  </Folder>
+</Solution>
