@@ -15,11 +15,19 @@ public class Booking
     // Конструктор для створення вручну
     public Booking(Pet pet, Room room, DateTime checkIn, DateTime checkOut, IPricingStrategy pricingStrategy)
     {
+        // Залишаємо ArgumentNullException, оскільки це базова системна перевірка на null
         if (pet == null) throw new ArgumentNullException(nameof(pet));
         if (room == null) throw new ArgumentNullException(nameof(room));
-        if (checkIn < DateTime.Today) throw new ArgumentException("Дата заїзду не може бути в минулому.");
-        if (checkOut <= checkIn) throw new ArgumentException("Дата виїзду має бути пізнішою за дату заїзду.");
-        if (room.IsOccupied) throw new InvalidOperationException("Цей вольєр уже зайнятий.");
+        
+        // Замінено на BusinessRuleException (Логіка предметної області)
+        if (checkIn < DateTime.Today) 
+            throw new BusinessRuleException("Дата заїзду не може бути в минулому.");
+            
+        if (checkOut <= checkIn) 
+            throw new BusinessRuleException("Дата виїзду має бути пізнішою за дату заїзду.");
+            
+        if (room.IsOccupied) 
+            throw new BusinessRuleException("Цей вольєр уже зайнятий.");
 
         Pet = pet;
         Room = room;
@@ -35,14 +43,20 @@ public class Booking
 
     public void CompleteBooking()
     {
-        if (Status != BookingStatus.Active) throw new InvalidOperationException("Тільки активне бронювання можна завершити.");
+        // Замінено на BusinessRuleException (Захист від некоректних переходів статусів)
+        if (Status != BookingStatus.Active) 
+            throw new BusinessRuleException("Тільки активне бронювання можна завершити.");
+            
         Status = BookingStatus.Completed;
         Room.Release();
     }
 
     public void CancelBooking()
     {
-        if (Status != BookingStatus.Active) throw new InvalidOperationException("Тільки активне бронювання можна скасувати.");
+        // Замінено на BusinessRuleException (Захист від некоректних переходів статусів)
+        if (Status != BookingStatus.Active) 
+            throw new BusinessRuleException("Тільки активне бронювання можна скасувати.");
+            
         Status = BookingStatus.Cancelled;
         Room.Release();
     }

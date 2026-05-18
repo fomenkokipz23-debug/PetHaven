@@ -22,8 +22,13 @@ public class BookingService
     public async Task<Booking> BookRoomAsync(string petName, PetType type, int age, string roomNumber, int days, IPricingStrategy pricingStrategy)
     {
         var room = _roomRepo.GetByNumber(roomNumber);
-        if (room == null) throw new Exception("Кімнату не знайдено.");
-        if (room.IsOccupied) throw new Exception("Кімната вже зайнята.");
+        
+        // Замінено на BusinessRuleException
+        if (room == null) 
+            throw new BusinessRuleException("Кімнату не знайдено.");
+            
+        if (room.IsOccupied) 
+            throw new BusinessRuleException("Цей вольєр уже зайнятий іншою твариною.");
 
         var pet = new Pet(petName, type, age);
         var booking = new Booking(pet, room, DateTime.Today, DateTime.Today.AddDays(days), pricingStrategy);
@@ -43,8 +48,10 @@ public class BookingService
     public async Task CompleteBookingAsync(Guid bookingId)
     {
         var bookings = _bookingRepo.GetAll();
+        
+        // Замінено на BusinessRuleException
         var booking = bookings.FirstOrDefault(b => b.Id == bookingId) 
-            ?? throw new Exception("Бронювання не знайдено.");
+            ?? throw new BusinessRuleException("Бронювання не знайдено.");
 
         booking.CompleteBooking();
         _roomRepo.Update(booking.Room);
@@ -57,8 +64,10 @@ public class BookingService
     public async Task CancelBookingAsync(Guid bookingId)
     {
         var bookings = _bookingRepo.GetAll();
+        
+        // Замінено на BusinessRuleException
         var booking = bookings.FirstOrDefault(b => b.Id == bookingId) 
-            ?? throw new Exception("Бронювання не знайдено.");
+            ?? throw new BusinessRuleException("Бронювання не знайдено.");
 
         booking.CancelBooking();
         _roomRepo.Update(booking.Room);

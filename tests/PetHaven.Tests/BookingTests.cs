@@ -14,9 +14,9 @@ public class BookingTests
         var room = new Room("101", RoomType.Standard, 400);
         var checkIn = DateTime.Today;
         var checkOut = DateTime.Today.AddDays(5);
-        var strategy = new RegularPricingStrategy(); // ДОДАТИ ЦЕ
+        var strategy = new RegularPricingStrategy();
 
-        // Act (Додано strategy останнім параметром)
+        // Act
         var booking = new Booking(pet, room, checkIn, checkOut, strategy);
 
         // Assert
@@ -24,16 +24,16 @@ public class BookingTests
     }
 
     [Fact]
-    public void Constructor_InvalidDates_ThrowsArgumentException()
+    public void Constructor_InvalidDates_ThrowsBusinessRuleException()
     {
         // Arrange
         var pet = new Pet("Мурка", PetType.Cat, 2);
         var room = new Room("102", RoomType.Comfort, 500);
         var checkIn = DateTime.Today;
         var checkOut = DateTime.Today.AddDays(-1);
-        var strategy = new RegularPricingStrategy(); // ДОДАТИ ЦЕ
+        var strategy = new RegularPricingStrategy();
 
-        // Act & Assert (Додано strategy останнім параметром)
-        Assert.Throws<ArgumentException>(() => new Booking(pet, room, checkIn, checkOut, strategy));
+        // Act & Assert (Змінено очікуваний тип винятку на BusinessRuleException)
+        Assert.Throws<BusinessRuleException>(() => new Booking(pet, room, checkIn, checkOut, strategy));
     }
 }
