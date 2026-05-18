@@ -1,29 +1,45 @@
 using System;
 using System.Collections.Generic;
-using System.Linq; // Додано для роботи розширень LINQ (.FirstOrDefault)
+using System.Linq; 
 using System.Threading.Tasks;
 using PetHaven.Domain;
 
 namespace PetHaven.Application;
 
+/// <summary>
+/// Сервіс прикладного шару, що оркеструє сценарії використання (Use Cases) системи бронювання готелю.
+/// </summary>
 public class BookingService
 {
-    // Використовуємо інтерфейси замість конкретних файлових класів для SOLID архітектури
     private readonly IBookingRepository _bookingRepo;
     private readonly IRoomRepository _roomRepo;
 
+    /// <summary>
+    /// Ініціалізує новий екземпляр класу <see cref="BookingService"/> через інверсію залежностей (DIP).
+    /// </summary>
+    /// <param name="bookingRepo">Абстракція сховища бронювань.</param>
+    /// <param name="roomRepo">Абстракція сховища кімнат/вольєрів.</param>
     public BookingService(IBookingRepository bookingRepo, IRoomRepository roomRepo)
     {
-        _bookingRepo = bookingRepo;
-        _roomRepo = roomRepo;
+        _bookingRepo = bookingRepo ?? throw new ArgumentNullException(nameof(bookingRepo));
+        _roomRepo = roomRepo ?? throw new ArgumentNullException(nameof(roomRepo));
     }
 
-    // UC-1: Заселення (З підтримкою патерну Strategy)
+    /// <summary>
+    /// Асинхронно виконує сценарій заселення тварини (UC-1) з автоматичним розрахунком вартості за обраною стратегією.
+    /// </summary>
+    /// <param name="petName">Кличка свійської тварини.</param>
+    /// <param name="type">Тип тварини (кішка, собака тощо).</param>
+    /// <param name="age">Вік тварини (повинен бути в межах від 0 до 30).</param>
+    /// <param name="roomNumber">Унікальний текстовий номер вольєра.</param>
+    /// <param name="days">Тривалість проживання у днях.</param>
+    /// <param name="pricingStrategy">Поліморфна стратегія розрахунку фінальної вартості.</param>
+    /// <returns>Об'єкт створеного та зафіксованого бронювання.</returns>
+    /// <exception cref="BusinessRuleException">Викидається, якщо кімнату не знайдено або вольєр уже зарезервовано.</exception>
     public async Task<Booking> BookRoomAsync(string petName, PetType type, int age, string roomNumber, int days, IPricingStrategy pricingStrategy)
     {
         var room = _roomRepo.GetByNumber(roomNumber);
         
-        // Замінено на BusinessRuleException
         if (room == null) 
             throw new BusinessRuleException("Кімнату не знайдено.");
             
@@ -37,19 +53,21 @@ public class BookingService
         _roomRepo.Update(room);
         _bookingRepo.Add(booking);
 
-        // Зберігаємо зміни у файли асинхронно через контракти інтерфейсів
+        // Асинхронний пакетний сейв змін у JSON-файли інфраструктури
         await _roomRepo.SaveChangesAsync();
         await _bookingRepo.SaveChangesAsync();
 
         return booking;
     }
 
-    // UC-2: Виселення (Check-Out)
+    /// <summary>
+    /// Асинхронно завершує активне проживання тварини (UC-2), переводячи його в архів та звільняючи номерний фонд.
+    /// </summary>
+    /// <param name="bookingId">Унікальний системний ідентифікатор бронювання (Guid).</param>
+    /// <exception cref="BusinessRuleException">Викидається, якщо бронювання з таким ID не існує в системі.</exception>
     public async Task CompleteBookingAsync(Guid bookingId)
     {
         var bookings = _bookingRepo.GetAll();
-        
-        // Замінено на BusinessRuleException
         var booking = bookings.FirstOrDefault(b => b.Id == bookingId) 
             ?? throw new BusinessRuleException("Бронювання не знайдено.");
 
@@ -60,12 +78,14 @@ public class BookingService
         await _bookingRepo.SaveChangesAsync();
     }
 
-    // UC-3: Скасування бронювання
+    /// <summary>
+    /// Асинхронно скасовує активне бронювання тварини (UC-3) за ініціативою клієнта з миттєвим звільненням вольєра.
+    /// </summary>
+    /// <param name="bookingId">Унікальний системний ідентифікатор бронювання (Guid).</param>
+    /// <exception cref="BusinessRuleException">Викидається, якщо бронювання не знайдено або вже не є активним.</exception>
     public async Task CancelBookingAsync(Guid bookingId)
     {
         var bookings = _bookingRepo.GetAll();
-        
-        // Замінено на BusinessRuleException
         var booking = bookings.FirstOrDefault(b => b.Id == bookingId) 
             ?? throw new BusinessRuleException("Бронювання не знайдено.");
 
