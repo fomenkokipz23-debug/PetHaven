@@ -1,3 +1,4 @@
+```mermaid
 sequenceDiagram
     actor Admin as Адміністратор (Console)
     participant Service as BookingService (Application)

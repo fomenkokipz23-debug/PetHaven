@@ -1,5 +1,6 @@
+```mermaid
 classDiagram
-    direction TN
+    direction TB
     
     class Pet {
         +Guid Id
