@@ -1,3 +1,5 @@
+using System;
+
 namespace PetHaven.Domain;
 
 public class Pet
@@ -10,9 +12,10 @@ public class Pet
     public Pet(string name, PetType type, int age)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new ArgumentException("Ім'я тварини не може бути порожнім.");
+            throw new BusinessRuleException("Ім'я тварини не може бути порожнім.");
+            
         if (age < 0 || age > 30)
-            throw new ArgumentOutOfRangeException(nameof(age), "Некоректний вік тварини.");
+            throw new BusinessRuleException("Некоректний вік тварини.");
 
         Name = name;
         Type = type;
