@@ -1,35 +1,69 @@
+using System;
+using System.Collections.Generic;
+using System.Linq; // Додано для роботи розширень LINQ (.FirstOrDefault)
+using System.Threading.Tasks;
 using PetHaven.Domain;
 
 namespace PetHaven.Application;
 
 public class BookingService
 {
-    private readonly IBookingRepository _bookingRepository;
-    private readonly IRoomRepository _roomRepository;
+    // Використовуємо інтерфейси замість конкретних файлових класів для SOLID архітектури
+    private readonly IBookingRepository _bookingRepo;
+    private readonly IRoomRepository _roomRepo;
 
-    public BookingService(IBookingRepository bookingRepository, IRoomRepository roomRepository)
+    public BookingService(IBookingRepository bookingRepo, IRoomRepository roomRepo)
     {
-        _bookingRepository = bookingRepository;
-        _roomRepository = roomRepository;
+        _bookingRepo = bookingRepo;
+        _roomRepo = roomRepo;
     }
 
-    public Booking BookRoom(string petName, PetType type, int age, string roomNumber, int days)
+    // UC-1: Заселення (З підтримкою патерну Strategy)
+    public async Task<Booking> BookRoomAsync(string petName, PetType type, int age, string roomNumber, int days, IPricingStrategy pricingStrategy)
     {
-        var room = _roomRepository.GetByNumber(roomNumber);
+        var room = _roomRepo.GetByNumber(roomNumber);
         if (room == null) throw new Exception("Кімнату не знайдено.");
         if (room.IsOccupied) throw new Exception("Кімната вже зайнята.");
 
         var pet = new Pet(petName, type, age);
-        
-        DateTime checkIn = DateTime.Today;
-        DateTime checkOut = checkIn.AddDays(days);
+        var booking = new Booking(pet, room, DateTime.Today, DateTime.Today.AddDays(days), pricingStrategy);
 
-        var booking = new Booking(pet, room, checkIn, checkOut);
-        
         room.MarkAsOccupied();
-        _roomRepository.Update(room);
-        _bookingRepository.Add(booking);
+        _roomRepo.Update(room);
+        _bookingRepo.Add(booking);
+
+        // Зберігаємо зміни у файли асинхронно через контракти інтерфейсів
+        await _roomRepo.SaveChangesAsync();
+        await _bookingRepo.SaveChangesAsync();
 
         return booking;
+    }
+
+    // UC-2: Виселення (Check-Out)
+    public async Task CompleteBookingAsync(Guid bookingId)
+    {
+        var bookings = _bookingRepo.GetAll();
+        var booking = bookings.FirstOrDefault(b => b.Id == bookingId) 
+            ?? throw new Exception("Бронювання не знайдено.");
+
+        booking.CompleteBooking();
+        _roomRepo.Update(booking.Room);
+
+        await _roomRepo.SaveChangesAsync();
+        await _bookingRepo.SaveChangesAsync();
+    }
+
+    // UC-3: Скасування бронювання
+    public async Task CancelBookingAsync(Guid bookingId)
+    {
+        var bookings = _bookingRepo.GetAll();
+        var booking = bookings.FirstOrDefault(b => b.Id == bookingId) 
+            ?? throw new Exception("Бронювання не знайдено.");
+
+        booking.CancelBooking();
+        _roomRepo.Update(booking.Room);
+
+        await _roomRepo.SaveChangesAsync();
+        await _bookingRepo.SaveChangesAsync();
     }
 }

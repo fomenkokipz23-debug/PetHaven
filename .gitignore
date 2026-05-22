@@ -1,0 +1,21 @@
+## Visual Studio User Settings
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Cc]heckout/
+[Rr]elease/
+x64/
+x86/
+bld/
+[Bb]in/
+[Oo]bj/
+Log/
+Logs/
+
+## JetBrains Rider
+.idea/
+*.sln.iml

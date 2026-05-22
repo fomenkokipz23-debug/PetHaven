@@ -1,15 +1,19 @@
+using System;
+
 namespace PetHaven.Domain;
 
 public class Booking
 {
-    public Guid Id { get; } = Guid.NewGuid();
-    public Pet Pet { get; }
-    public Room Room { get; }
-    public DateTime CheckInDate { get; }
-    public DateTime CheckOutDate { get; }
-    public decimal TotalPrice { get; }
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Pet Pet { get; set; } = null!;   // Додано = null!; щоб прибрати warning
+    public Room Room { get; set; } = null!; // Додано = null!; щоб прибрати warning
+    public DateTime CheckInDate { get; set; }
+    public DateTime CheckOutDate { get; set; }
+    public decimal TotalPrice { get; set; }
+    public BookingStatus Status { get; private set; } = BookingStatus.Active;
 
-    public Booking(Pet pet, Room room, DateTime checkIn, DateTime checkOut)
+    // Конструктор для створення вручну
+    public Booking(Pet pet, Room room, DateTime checkIn, DateTime checkOut, IPricingStrategy pricingStrategy)
     {
         if (pet == null) throw new ArgumentNullException(nameof(pet));
         if (room == null) throw new ArgumentNullException(nameof(room));
@@ -21,12 +25,25 @@ public class Booking
         Room = room;
         CheckInDate = checkIn;
         CheckOutDate = checkOut;
-        TotalPrice = CalculatePrice();
+        
+        int days = (CheckOutDate - CheckInDate).Days;
+        TotalPrice = pricingStrategy.CalculatePrice(room.PricePerNight, days, pet.Type);
     }
 
-    private decimal CalculatePrice()
+    // Конструктор без параметрів для серіалізації JSON
+    public Booking() { }
+
+    public void CompleteBooking()
     {
-        int days = (CheckOutDate - CheckInDate).Days;
-        return days * Room.PricePerNight;
+        if (Status != BookingStatus.Active) throw new InvalidOperationException("Тільки активне бронювання можна завершити.");
+        Status = BookingStatus.Completed;
+        Room.Release();
+    }
+
+    public void CancelBooking()
+    {
+        if (Status != BookingStatus.Active) throw new InvalidOperationException("Тільки активне бронювання можна скасувати.");
+        Status = BookingStatus.Cancelled;
+        Room.Release();
     }
 }
